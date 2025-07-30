@@ -15,7 +15,7 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                git branch: "${params.BRANCH_NAME}", url: "${env.REPO_URL}"
+                git branch: "${params.GIT_BRANCH}", url: "${env.REPO_URL}"
             }
         }
         stage('Install Dependencies') {
@@ -38,10 +38,10 @@ pipeline {
     }
     post {
         success {
-            echo "✅ Deployment to EC2 successful from branch: ${params.BRANCH_NAME}"
+            echo "✅ Deployment to EC2 successful from branch: ${params.GIT_BRANCH}"
         }
         failure {
-            echo "❌ Deployment failed for branch: ${params.BRANCH_NAME}"
+            echo "❌ Deployment failed for branch: ${params.GIT_BRANCH}"
         }
     }
 }
