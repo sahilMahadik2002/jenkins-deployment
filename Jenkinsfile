@@ -37,8 +37,8 @@ pipeline {
         BUILD_ID = "${params.DEPLOYMENT_VERSION}-${env.BUILD_NUMBER}-${TIMESTAMP}"
         
         // Environment-specific configurations
-        DEV_HOST = 'ec2-dev-instance.compute.amazonaws.com'
-        STAGING_HOST = 'ec2-staging-instance.compute.amazonaws.com'
+        DEV_HOST = 'ec2-13-51-48-112.eu-north-1.compute.amazonaws.com'
+        STAGING_HOST = 'ec2-13-51-48-112.eu-north-1.compute.amazonaws.com'
         PROD_HOST = 'ec2-13-51-48-112.eu-north-1.compute.amazonaws.com'
         
         DEV_USER = 'ubuntu'
