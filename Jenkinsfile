@@ -125,7 +125,7 @@ pipeline {
                     echo "📦 Creating backup of current deployment..."
                     
                     bat """
-                    "C:\\Program Files\\Git\\bin\\bash.exe" -c "ssh -o StrictHostKeyChecking=no -i '${env.PEM_KEY_PATH}' ${env.TARGET_USER}@${env.TARGET_HOST} 'sudo mkdir -p ${env.REMOTE_BACKUP_DIR}/versions && sudo mkdir -p ${env.REMOTE_BACKUP_DIR}/snapshots && CURRENT_VERSION=\\$(sudo cat ${env.NGINX_ROOT_DIR}/.version 2>/dev/null || echo no-version) && echo Current version: \\$CURRENT_VERSION && if [ -f ${env.NGINX_ROOT_DIR}/index.html ]; then echo Creating snapshot backup... && sudo cp -r ${env.NGINX_ROOT_DIR} ${env.REMOTE_BACKUP_DIR}/snapshots/pre-${env.BUILD_ID} && echo \\$CURRENT_VERSION | sudo tee ${env.REMOTE_BACKUP_DIR}/snapshots/pre-${env.BUILD_ID}/.previous_version && echo Backup created: pre-${env.BUILD_ID}; else echo No existing deployment to backup; fi'"
+                    "C:\\Program Files\\Git\\bin\\bash.exe" -c "ssh -o StrictHostKeyChecking=no -i '${env.PEM_KEY_PATH}' ${env.TARGET_USER}@${env.TARGET_HOST} 'sudo mkdir -p ${env.REMOTE_BACKUP_DIR}/versions && sudo mkdir -p ${env.REMOTE_BACKUP_DIR}/snapshots && CURRENT_VERSION=\\\$(sudo cat ${env.NGINX_ROOT_DIR}/.version 2>/dev/null || echo no-version) && echo Current version: \\\$CURRENT_VERSION && if [ -f ${env.NGINX_ROOT_DIR}/index.html ]; then echo Creating snapshot backup... && sudo cp -r ${env.NGINX_ROOT_DIR} ${env.REMOTE_BACKUP_DIR}/snapshots/pre-${env.BUILD_ID} && echo \\\$CURRENT_VERSION | sudo tee ${env.REMOTE_BACKUP_DIR}/snapshots/pre-${env.BUILD_ID}/.previous_version && echo Backup created: pre-${env.BUILD_ID}; else echo No existing deployment to backup; fi'"
                     """
                 }
             }
