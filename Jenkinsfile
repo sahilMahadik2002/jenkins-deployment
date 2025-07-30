@@ -1,7 +1,7 @@
 pipeline {
     agent any
     parameters {
-        string(name: 'BRANCH_NAME', defaultValue: 'main', description: 'Enter the branch to build')
+        string(name: 'GIT_BRANCH', defaultValue: 'main', description: 'Enter the branch to build')
     }
     environment {
         PEM_KEY_PATH = '"/c/Program Files/Jenkins/keys/jenkinsdeployment.pem"'
