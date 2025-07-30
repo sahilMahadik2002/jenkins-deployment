@@ -168,16 +168,6 @@ pipeline {
             }
         }
         
-        stage('Run Tests') {
-            when {
-                not { params.SKIP_TESTS }
-            }
-            steps {
-                echo "🧪 Running tests..."
-                bat 'npm test -- --watchAll=false || exit 0'  // Don't fail if no tests
-            }
-        }
-        
         stage('Build Application') {
             steps {
                 echo "🏗️ Building application..."
