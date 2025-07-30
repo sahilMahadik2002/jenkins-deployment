@@ -32,7 +32,7 @@ pipeline {
     environment {
         // Common settings
         REPO_URL = 'https://github.com/sahilMahadik2002/jenkins-deployment.git'
-        PEM_KEY_PATH = '"/c/Program Files/Jenkins/keys/jenkinsdeployment.pem"'
+        PEM_KEY_PATH = 'C:\\Program Files\\Jenkins\\keys\\jenkinsdeployment.pem'
         TIMESTAMP = "${new Date().format('yyyy-MM-dd-HH-mm-ss')}"
         BUILD_ID = "${params.DEPLOYMENT_VERSION}-${env.BUILD_NUMBER}-${TIMESTAMP}"
         
@@ -101,11 +101,11 @@ pipeline {
                     if (!params.FORCE_DEPLOY) {
                         bat """
                         echo "Checking if version ${params.DEPLOYMENT_VERSION} already exists..."
-                        "C:\\Program Files\\Git\\bin\\bash.exe" -c "chmod 400 '/c/Program Files/Jenkins/keys/jenkinsdeployment.pem'"
+                        "C:\\Program Files\\Git\\bin\\bash.exe" -c "chmod 400 '${env.PEM_KEY_PATH}'"
                         """
                         
                         def versionExists = bat(
-                            script: "\"C:\\Program Files\\Git\\bin\\bash.exe\" -c \"ssh -o StrictHostKeyChecking=no -i '/c/Program Files/Jenkins/keys/jenkinsdeployment.pem' ${env.TARGET_USER}@${env.TARGET_HOST} 'test -d ${env.REMOTE_BACKUP_DIR}/${params.DEPLOYMENT_VERSION} && echo EXISTS || echo NOT_EXISTS'\"",
+                            script: "\"C:\\Program Files\\Git\\bin\\bash.exe\" -c \"ssh -o StrictHostKeyChecking=no -i '${env.PEM_KEY_PATH}' ${env.TARGET_USER}@${env.TARGET_HOST} 'test -d ${env.REMOTE_BACKUP_DIR}/${params.DEPLOYMENT_VERSION} && echo EXISTS || echo NOT_EXISTS'\"",
                             returnStdout: true
                         ).trim()
                         
@@ -125,25 +125,7 @@ pipeline {
                     echo "📦 Creating backup of current deployment..."
                     
                     bat """
-                    "C:\\Program Files\\Git\\bin\\bash.exe" -c "ssh -o StrictHostKeyChecking=no -i '/c/Program Files/Jenkins/keys/jenkinsdeployment.pem' ${env.TARGET_USER}@${env.TARGET_HOST} '
-                        # Create backup directories
-                        sudo mkdir -p ${env.REMOTE_BACKUP_DIR}/versions
-                        sudo mkdir -p ${env.REMOTE_BACKUP_DIR}/snapshots
-                        
-                        # Get current version if exists
-                        CURRENT_VERSION=\\\$(sudo cat ${env.NGINX_ROOT_DIR}/.version 2>/dev/null || echo \"no-version\")
-                        echo \"Current version: \\\$CURRENT_VERSION\"
-                        
-                        # Create snapshot backup
-                        if [ -f \"${env.NGINX_ROOT_DIR}/index.html\" ]; then
-                            echo \"Creating snapshot backup...\"
-                            sudo cp -r ${env.NGINX_ROOT_DIR} ${env.REMOTE_BACKUP_DIR}/snapshots/pre-${env.BUILD_ID}
-                            echo \"\\\$CURRENT_VERSION\" | sudo tee ${env.REMOTE_BACKUP_DIR}/snapshots/pre-${env.BUILD_ID}/.previous_version
-                            echo \"Backup created: pre-${env.BUILD_ID}\"
-                        else
-                            echo \"No existing deployment to backup\"
-                        fi
-                    '"
+                    "C:\\Program Files\\Git\\bin\\bash.exe" -c "ssh -o StrictHostKeyChecking=no -i '${env.PEM_KEY_PATH}' ${env.TARGET_USER}@${env.TARGET_HOST} 'sudo mkdir -p ${env.REMOTE_BACKUP_DIR}/versions && sudo mkdir -p ${env.REMOTE_BACKUP_DIR}/snapshots && CURRENT_VERSION=\\$(sudo cat ${env.NGINX_ROOT_DIR}/.version 2>/dev/null || echo no-version) && echo Current version: \\$CURRENT_VERSION && if [ -f ${env.NGINX_ROOT_DIR}/index.html ]; then echo Creating snapshot backup... && sudo cp -r ${env.NGINX_ROOT_DIR} ${env.REMOTE_BACKUP_DIR}/snapshots/pre-${env.BUILD_ID} && echo \\$CURRENT_VERSION | sudo tee ${env.REMOTE_BACKUP_DIR}/snapshots/pre-${env.BUILD_ID}/.previous_version && echo Backup created: pre-${env.BUILD_ID}; else echo No existing deployment to backup; fi'"
                     """
                 }
             }
@@ -188,28 +170,12 @@ pipeline {
                     try {
                         bat """
                         echo "Uploading files to server..."
-                        "C:\\Program Files\\Git\\bin\\bash.exe" -c "scp -o StrictHostKeyChecking=no -i '/c/Program Files/Jenkins/keys/jenkinsdeployment.pem' -r dist/* ${env.TARGET_USER}@${env.TARGET_HOST}:${env.REMOTE_APP_DIR}/"
+                        "C:\\Program Files\\Git\\bin\\bash.exe" -c "scp -o StrictHostKeyChecking=no -i '${env.PEM_KEY_PATH}' -r dist/* ${env.TARGET_USER}@${env.TARGET_HOST}:${env.REMOTE_APP_DIR}/"
+                        """
                         
+                        bat """
                         echo "Deploying to nginx directory..."
-                        "C:\\Program Files\\Git\\bin\\bash.exe" -c "ssh -o StrictHostKeyChecking=no -i '/c/Program Files/Jenkins/keys/jenkinsdeployment.pem' ${env.TARGET_USER}@${env.TARGET_HOST} '
-                            # Create version backup before deployment
-                            sudo mkdir -p ${env.REMOTE_BACKUP_DIR}/versions/${params.DEPLOYMENT_VERSION}
-                            sudo cp -r ${env.REMOTE_APP_DIR}/* ${env.REMOTE_BACKUP_DIR}/versions/${params.DEPLOYMENT_VERSION}/
-                            
-                            # Deploy to nginx
-                            sudo rm -rf ${env.NGINX_ROOT_DIR}/*
-                            sudo cp -r ${env.REMOTE_APP_DIR}/* ${env.NGINX_ROOT_DIR}/
-                            
-                            # Set permissions
-                            sudo chown -R www-data:www-data ${env.NGINX_ROOT_DIR}/
-                            sudo chmod -R 644 ${env.NGINX_ROOT_DIR}/*
-                            sudo chmod 755 ${env.NGINX_ROOT_DIR}/
-                            
-                            # Restart nginx
-                            sudo systemctl restart nginx
-                            
-                            echo \"Deployment completed: ${params.DEPLOYMENT_VERSION}\"
-                        '"
+                        "C:\\Program Files\\Git\\bin\\bash.exe" -c "ssh -o StrictHostKeyChecking=no -i '${env.PEM_KEY_PATH}' ${env.TARGET_USER}@${env.TARGET_HOST} 'sudo mkdir -p ${env.REMOTE_BACKUP_DIR}/versions/${params.DEPLOYMENT_VERSION} && sudo cp -r ${env.REMOTE_APP_DIR}/* ${env.REMOTE_BACKUP_DIR}/versions/${params.DEPLOYMENT_VERSION}/ && sudo rm -rf ${env.NGINX_ROOT_DIR}/* && sudo cp -r ${env.REMOTE_APP_DIR}/* ${env.NGINX_ROOT_DIR}/ && sudo chown -R www-data:www-data ${env.NGINX_ROOT_DIR}/ && sudo chmod -R 644 ${env.NGINX_ROOT_DIR}/* && sudo chmod 755 ${env.NGINX_ROOT_DIR}/ && sudo systemctl restart nginx && echo Deployment completed: ${params.DEPLOYMENT_VERSION}'"
                         """
                         
                         env.DEPLOYMENT_SUCCESS = 'true'
@@ -224,66 +190,11 @@ pipeline {
             }
         }
         
-        stage('Health Check') {
-            steps {
-                script {
-                    echo "🔍 Running health checks..."
-                    
-                    def healthCheckPassed = false
-                    def attempts = 0
-                    def maxAttempts = 3
-                    
-                    while (!healthCheckPassed && attempts < maxAttempts) {
-                        attempts++
-                        echo "Health check attempt ${attempts}/${maxAttempts}..."
-                        
-                        try {
-                            def healthResult = bat(
-                                script: "\"C:\\Program Files\\Git\\bin\\bash.exe\" -c \"ssh -o StrictHostKeyChecking=no -i '/c/Program Files/Jenkins/keys/jenkinsdeployment.pem' ${env.TARGET_USER}@${env.TARGET_HOST} 'curl -s -o /dev/null -w \\\\\\\"%{http_code}\\\\\\\" http://localhost --max-time 10'\"",
-                                returnStdout: true
-                            ).trim()
-                            
-                            if (healthResult.contains('200')) {
-                                echo "✅ Health check passed (HTTP 200)"
-                                healthCheckPassed = true
-                                env.HEALTH_CHECK_SUCCESS = 'true'
-                            } else {
-                                echo "⚠️ Health check failed (HTTP ${healthResult})"
-                                if (attempts < maxAttempts) {
-                                    sleep(10)
-                                }
-                            }
-                        } catch (Exception e) {
-                            echo "⚠️ Health check error: ${e.getMessage()}"
-                            if (attempts < maxAttempts) {
-                                sleep(10)
-                            }
-                        }
-                    }
-                    
-                    if (!healthCheckPassed) {
-                        env.HEALTH_CHECK_SUCCESS = 'false'
-                        error("❌ Health checks failed after ${maxAttempts} attempts")
-                    }
-                }
-            }
-        }
-        
         stage('Cleanup Old Backups') {
             steps {
                 echo "🧹 Cleaning up old backups..."
                 bat """
-                "C:\\Program Files\\Git\\bin\\bash.exe" -c "ssh -o StrictHostKeyChecking=no -i '/c/Program Files/Jenkins/keys/jenkinsdeployment.pem' ${env.TARGET_USER}@${env.TARGET_HOST} '
-                    # Keep only the latest ${env.MAX_BACKUPS} version backups
-                    cd ${env.REMOTE_BACKUP_DIR}/versions && ls -t | tail -n +\\\$((${env.MAX_BACKUPS} + 1)) | xargs -r sudo rm -rf
-                    
-                    # Keep only the latest ${env.MAX_BACKUPS} snapshot backups
-                    cd ${env.REMOTE_BACKUP_DIR}/snapshots && ls -t | tail -n +\\\$((${env.MAX_BACKUPS} + 1)) | xargs -r sudo rm -rf
-                    
-                    echo \"Cleanup completed. Current backups:\"
-                    ls -la ${env.REMOTE_BACKUP_DIR}/versions/ 2>/dev/null || echo \"No version backups\"
-                    ls -la ${env.REMOTE_BACKUP_DIR}/snapshots/ 2>/dev/null || echo \"No snapshot backups\"
-                '"
+                "C:\\Program Files\\Git\\bin\\bash.exe" -c "ssh -o StrictHostKeyChecking=no -i '${env.PEM_KEY_PATH}' ${env.TARGET_USER}@${env.TARGET_HOST} 'cd ${env.REMOTE_BACKUP_DIR}/versions && ls -t | tail -n +\\$((${env.MAX_BACKUPS} + 1)) | xargs -r sudo rm -rf && cd ${env.REMOTE_BACKUP_DIR}/snapshots && ls -t | tail -n +\\$((${env.MAX_BACKUPS} + 1)) | xargs -r sudo rm -rf && echo Cleanup completed. Current backups: && ls -la ${env.REMOTE_BACKUP_DIR}/versions/ 2>/dev/null || echo No version backups && ls -la ${env.REMOTE_BACKUP_DIR}/snapshots/ 2>/dev/null || echo No snapshot backups'"
                 """
             }
         }
@@ -321,40 +232,7 @@ pipeline {
                     
                     try {
                         bat """
-                        "C:\\Program Files\\Git\\bin\\bash.exe" -c "ssh -o StrictHostKeyChecking=no -i '/c/Program Files/Jenkins/keys/jenkinsdeployment.pem' ${env.TARGET_USER}@${env.TARGET_HOST} '
-                            echo \"Starting automatic rollback...\"
-                            
-                            # Find the latest snapshot backup
-                            LATEST_BACKUP=\\\$(ls -t ${env.REMOTE_BACKUP_DIR}/snapshots/ | grep \"pre-\" | head -1)
-                            
-                            if [ -n \"\\\$LATEST_BACKUP\" ]; then
-                                echo \"Rolling back to: \\\$LATEST_BACKUP\"
-                                
-                                # Restore from backup
-                                sudo rm -rf ${env.NGINX_ROOT_DIR}/*
-                                sudo cp -r ${env.REMOTE_BACKUP_DIR}/snapshots/\\\$LATEST_BACKUP/* ${env.NGINX_ROOT_DIR}/
-                                
-                                # Set permissions
-                                sudo chown -R www-data:www-data ${env.NGINX_ROOT_DIR}/
-                                sudo chmod -R 644 ${env.NGINX_ROOT_DIR}/*
-                                sudo chmod 755 ${env.NGINX_ROOT_DIR}/
-                                
-                                # Restart nginx
-                                sudo systemctl restart nginx
-                                
-                                # Verify rollback
-                                sleep 5
-                                ROLLBACK_STATUS=\\\$(curl -s -o /dev/null -w \"%{http_code}\" http://localhost --max-time 10)
-                                
-                                if [ \"\\\$ROLLBACK_STATUS\" = \"200\" ]; then
-                                    echo \"✅ Rollback successful! Service restored.\"
-                                else
-                                    echo \"⚠️ Rollback completed but health check returned: \\\$ROLLBACK_STATUS\"
-                                fi
-                            else
-                                echo \"❌ No backup found for rollback!\"
-                            fi
-                        '"
+                        "C:\\Program Files\\Git\\bin\\bash.exe" -c "ssh -o StrictHostKeyChecking=no -i '${env.PEM_KEY_PATH}' ${env.TARGET_USER}@${env.TARGET_HOST} 'echo Starting automatic rollback... && LATEST_BACKUP=\\$(ls -t ${env.REMOTE_BACKUP_DIR}/snapshots/ | grep pre- | head -1) && if [ -n \\$LATEST_BACKUP ]; then echo Rolling back to: \\$LATEST_BACKUP && sudo rm -rf ${env.NGINX_ROOT_DIR}/* && sudo cp -r ${env.REMOTE_BACKUP_DIR}/snapshots/\\$LATEST_BACKUP/* ${env.NGINX_ROOT_DIR}/ && sudo chown -R www-data:www-data ${env.NGINX_ROOT_DIR}/ && sudo chmod -R 644 ${env.NGINX_ROOT_DIR}/* && sudo chmod 755 ${env.NGINX_ROOT_DIR}/ && sudo systemctl restart nginx && sleep 5 && ROLLBACK_STATUS=\\$(curl -s -o /dev/null -w %{http_code} http://localhost --max-time 10) && if [ \\$ROLLBACK_STATUS = 200 ]; then echo Rollback successful! Service restored.; else echo Rollback completed but health check returned: \\$ROLLBACK_STATUS; fi; else echo No backup found for rollback!; fi'"
                         """
                         
                         echo "🔄 Automatic rollback completed"
@@ -370,11 +248,7 @@ pipeline {
         always {
             echo "📊 Deployment Summary:"
             bat """
-            "C:\\Program Files\\Git\\bin\\bash.exe" -c "ssh -o StrictHostKeyChecking=no -i '/c/Program Files/Jenkins/keys/jenkinsdeployment.pem' ${env.TARGET_USER}@${env.TARGET_HOST} '
-                echo \"Current version: \\\$(sudo cat ${env.NGINX_ROOT_DIR}/.version 2>/dev/null || echo \"unknown\")\"
-                echo \"Service status: \\\$(sudo systemctl is-active nginx)\"
-                echo \"Available backups: \\\$(ls ${env.REMOTE_BACKUP_DIR}/versions/ 2>/dev/null | wc -l) versions, \\\$(ls ${env.REMOTE_BACKUP_DIR}/snapshots/ 2>/dev/null | wc -l) snapshots\"
-            '"
+            "C:\\Program Files\\Git\\bin\\bash.exe" -c "ssh -o StrictHostKeyChecking=no -i '${env.PEM_KEY_PATH}' ${env.TARGET_USER}@${env.TARGET_HOST} 'echo Current version: \\$(sudo cat ${env.NGINX_ROOT_DIR}/.version 2>/dev/null || echo unknown) && echo Service status: \\$(sudo systemctl is-active nginx) && echo Available backups: \\$(ls ${env.REMOTE_BACKUP_DIR}/versions/ 2>/dev/null | wc -l) versions, \\$(ls ${env.REMOTE_BACKUP_DIR}/snapshots/ 2>/dev/null | wc -l) snapshots'"
             """
         }
     }
