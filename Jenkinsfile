@@ -18,7 +18,7 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                git branch: "${params.BRANCH_NAME}", url: "${env.REPO_URL}", credentialsId: 'github-token'
+                git branch: "${params.BRANCH_NAME}", url: "${env.REPO_URL}"
             }
         }
 
@@ -37,16 +37,16 @@ pipeline {
         stage('Deploy to EC2') {
             steps {
                 bat """
-                ${env.GIT_BASH} -c "
-                chmod 400 ${env.PEM_KEY_PATH} && \
-                echo 'Copying dist to EC2...' && \
-                scp -o StrictHostKeyChecking=no -i ${env.PEM_KEY_PATH} -r dist/* ${env.EC2_USER}@${env.EC2_HOST}:${env.REMOTE_DEPLOY_DIR}/ && \
-                echo 'SSH into EC2 and deploy...' && \
-                ssh -o StrictHostKeyChecking=no -i ${env.PEM_KEY_PATH} ${env.EC2_USER}@${env.EC2_HOST} \\
-                    'sudo rm -rf ${env.NGINX_ROOT_DIR}/* && \\
-                    sudo cp -r ${env.REMOTE_DEPLOY_DIR}/* ${env.NGINX_ROOT_DIR}/ && \\
-                    sudo systemctl restart nginx'"
-                """
+        ${env.GIT_BASH} -c "
+        chmod 400 '${env.PEM_KEY_PATH}' && \
+        echo 'Copying dist to EC2...' && \
+        scp -o StrictHostKeyChecking=no -i '${env.PEM_KEY_PATH}' -r dist/* ${env.EC2_USER}@${env.EC2_HOST}:${env.REMOTE_DEPLOY_DIR}/ && \
+        echo 'SSH into EC2 and deploy...' && \
+        ssh -o StrictHostKeyChecking=no -i '${env.PEM_KEY_PATH}' ${env.EC2_USER}@${env.EC2_HOST} \\
+            'sudo rm -rf ${env.NGINX_ROOT_DIR}/* && \\
+            sudo cp -r ${env.REMOTE_DEPLOY_DIR}/* ${env.NGINX_ROOT_DIR}/ && \\
+            sudo systemctl restart nginx'"
+        """
             }
         }
     }
