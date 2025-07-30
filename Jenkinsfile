@@ -15,7 +15,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: "${params.GIT_BRANCH}", url: 'https://github.com/Shital-Lanke/Devops_Learning.git'
+                git branch: "${params.GIT_BRANCH}", url: 'https://github.com/sahilMahadik2002/jenkins-deployment.git'
             }
         }
 
