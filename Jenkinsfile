@@ -2,63 +2,61 @@ pipeline {
     agent any
 
     parameters {
-        string(name: 'GIT_BRANCH', defaultValue: 'main', description: 'Git branch to deploy')
+        string(name: 'BRANCH_NAME', defaultValue: 'master', description: 'Enter the branch to build')
     }
 
     environment {
-        SSH_USER = 'ubuntu'
-        SSH_HOST = credentials('EC2_HOST_PROD')
-        SSH_KEY = credentials('EC2_SSH_KEY_PROD')
+        PEM_KEY_PATH = '"/c/Program Files/Jenkins/keys/jenkinsdeployment.pem"'
+        EC2_USER = 'ubuntu'
+        EC2_HOST = 'ec2-13-51-48-112.eu-north-1.compute.amazonaws.com'
+        REPO_URL = 'https://github.com/sahilMahadik2002/jenkins-deployment.git'
+        REMOTE_DEPLOY_DIR = '/tmp/react-build'
+        NGINX_ROOT_DIR = '/var/www/html'
         GIT_BASH = '"C:\\Program Files\\Git\\bin\\bash.exe"'
     }
 
     stages {
-        stage('Checkout') {
+        stage('Clone Repository') {
             steps {
-                git branch: "${params.GIT_BRANCH}", url: 'https://github.com/sahilMahadik2002/jenkins-deployment.git'
+                git branch: "${params.BRANCH_NAME}", url: "${env.REPO_URL}", credentialsId: 'github-token'
             }
         }
 
-        stage('Build') {
+        stage('Install Dependencies') {
             steps {
-                bat '"C:\\Program Files\\Git\\bin\\bash.exe" build/build.sh'
+                bat 'npm install'
             }
         }
 
-        stage('Deploy') {
-            environment {
-                SSH_HOST = credentials('EC2_HOST_PROD') // Injects your EC2 host string
-            }
+        stage('Build Vite Project') {
             steps {
-                sshagent(credentials: ['EC2_SSH_KEY_PROD']) {
-                    sh '''
-                        echo "Uploading build to remote server..."
-                        scp -o StrictHostKeyChecking=no -r build/ ubuntu@$SSH_HOST:/tmp/build
-
-                        echo "Running deploy script on remote server..."
-                        ssh -o StrictHostKeyChecking=no ubuntu@$SSH_HOST 'bash -s' < deploy/deploy.sh /var/www/myapp
-                    '''
-                }
+                bat 'npm run build'
             }
-            post {
-                failure {
-                    echo 'Deployment failed! Rolling back...'
-                    sshagent(credentials: ['EC2_SSH_KEY_PROD']) {
-                        sh '''
-                            ssh -o StrictHostKeyChecking=no ubuntu@$SSH_HOST 'bash -s' < deploy/rollback.sh /var/www/myapp
-                        '''
-                    }
-                }
+        }
+
+        stage('Deploy to EC2') {
+            steps {
+                bat """
+                ${env.GIT_BASH} -c "
+                chmod 400 ${env.PEM_KEY_PATH} && \
+                echo 'Copying dist to EC2...' && \
+                scp -o StrictHostKeyChecking=no -i ${env.PEM_KEY_PATH} -r dist/* ${env.EC2_USER}@${env.EC2_HOST}:${env.REMOTE_DEPLOY_DIR}/ && \
+                echo 'SSH into EC2 and deploy...' && \
+                ssh -o StrictHostKeyChecking=no -i ${env.PEM_KEY_PATH} ${env.EC2_USER}@${env.EC2_HOST} \\
+                    'sudo rm -rf ${env.NGINX_ROOT_DIR}/* && \\
+                    sudo cp -r ${env.REMOTE_DEPLOY_DIR}/* ${env.NGINX_ROOT_DIR}/ && \\
+                    sudo systemctl restart nginx'"
+                """
             }
         }
     }
 
     post {
         success {
-            echo "Deployment successful on branch: ${params.GIT_BRANCH}"
+            echo "✅ Deployment to EC2 successful from branch: ${params.BRANCH_NAME}"
         }
         failure {
-            echo "Deployment failed on branch: ${params.GIT_BRANCH}"
+            echo "❌ Deployment failed for branch: ${params.BRANCH_NAME}"
         }
     }
 }
