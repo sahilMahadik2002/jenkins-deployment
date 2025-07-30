@@ -51,7 +51,8 @@ pipeline {
                 }
             }
         }
-        
+    }
+
     post {
         success {
             echo "Deployment successful on branch: ${params.GIT_BRANCH}"
