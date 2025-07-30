@@ -2,7 +2,6 @@
 npm install
 npm run build
 
-# Optional: copy contents to build folder if needed
+# Optional: copy dist output to build folder
 mkdir -p build
-cp -r ./build/* ./build/
-             
+cp -r ./dist/* ./build/
